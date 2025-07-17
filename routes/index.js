@@ -20,6 +20,8 @@ router.get('/connect', AuthController.getConnect);
 router.get('/disconnect', AuthController.getDisconnect);
 
 // Files
-router.post('/files', FilesController.postUpload);
+router.post('/files', FilesController.postUpload);  // Create File/Folder
+router.get('/files', FilesController.getIndex);     // List Files
+router.get('/files/:id', FilesController.getShow);  // Get File Metadata
 
 export default router;

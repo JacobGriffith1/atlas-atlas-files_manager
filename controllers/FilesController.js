@@ -102,6 +102,43 @@ class FilesController {
 
     return res.status(201).json(newFile);
   }
+
+  static async getShow(req, res) {
+    const token = req.headers['x-token']; // Get token from request headers
+    if (!token)
+      return res.status(401).json({ error: 'Unauthorized' }); // If missing, return a 401 error (Unauthorized)
+
+    const userId = await redisClient.get(`auth_${token}`);  // Look up the user ID in Redis using token
+    if (!userId)
+      return res.status(401).json({ error: 'Unauthorized' }); // If not found, token is invalid or expired. Return a 401 error (Unauthorized)
+
+    let file; // Wrap in try/catch in case ID is malformed or Mongo errors out
+    try {
+      file = await dbClient.db.collection('files').findOne({  // Try to find file by:
+        _id: new ObjectId(req.params.id),                     // _id from URL param: /files/:id
+        userId: new ObjectId(userId),                         // userId (to ensure it belongs to the user)
+      });
+    } catch {
+      return res.status(404).json({ error: 'Not found' });    // If file not found, 404
+    }
+
+    if (!file)
+      return res.status(404).json({ error: 'Not found' });  // For if findOne returns null
+
+    const result = {            // Creates response object
+      id: file._id,             // id, name, etc. copied from DB
+      userId: file.userId,      // "..." field only includes localpath if it exists
+      name: file.name,
+      type: file.type,
+      isPublic: file.isPublic,
+      parentId: file.parentId,
+      ...(file.localPath && { localPath: file.localPath }),
+    };
+
+    return res.status(200).json(result);
+  }
+
+  static async getIndex(req, res) {}
 }
 
 export default FilesController;
