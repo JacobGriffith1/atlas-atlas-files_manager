@@ -54,7 +54,7 @@ class FilesController {
     }
 
     if (type === 'folder') {
-      const result = await dbClient.db.collection('files'). insertOne({
+      const result = await dbClient.db.collection('files').insertOne({
         userId: user._id,
         name,
         type,
@@ -138,7 +138,48 @@ class FilesController {
     return res.status(200).json(result);
   }
 
-  static async getIndex(req, res) {}
+  static async getIndex(req, res) {
+    // Authenticate User
+    const token = req.headers['x-token'];
+    if (!token)
+      return res.status(401).json({ error: 'Unauthorized' });
+
+    const userId = await redisClient.get(`auth_${token}`);
+    if (!userId)
+      return res.status(401).json({ error: 'Unauthorized' });
+
+    // Parse/Normalize query params
+    const parentId = req.query.parentId || 0;
+    const page = parseInt(req.query.page, 10) || 0;
+
+    // Build MongoDB filter for user files
+    const matchQuery = {
+      userId: new ObjectId(userId),
+      parentId: parentId === 0 ? 0 : new ObjectId(parentId),
+    };
+
+    // Fetch paginated files using aggregation
+    const files = await dbClient.db.collection('files')
+    .aggregate([
+      { $match: matchQuery },
+      { $skip: page * 20 },
+      { $limit: 20 },
+    ])
+    .toArray();
+
+    // Format response
+    const fileList = files.map(file =>({
+      id: file._id,
+      userId: file.userId,
+      name: file.name,
+      type: file.type,
+      isPublic: file.isPublic,
+      parentId: file.parentId,
+      ...(file.localPath && { localPath: file.localPath }),
+    }));
+
+    return res.status(200).json(fileList);
+  }
 }
 
 export default FilesController;
