@@ -1,3 +1,4 @@
+// controllers/AuthController.js
 import dbClient from '../utils/db.js';
 import redisClient from '../utils/db.js';
 import sha1 from 'sha1';
