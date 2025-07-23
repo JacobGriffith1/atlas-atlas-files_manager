@@ -4,9 +4,9 @@ import fs from 'fs/promises';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import dbClient from '../utils/db';
-import redisClient from '../utils/redis';
 import dotenv from 'dotenv';
 import { getUserFromToken } from '../utils/auth';
+import { getFileByIdAndUser, formatFileResponse } from '../utils/file';
 
 dotenv.config();
 
@@ -105,30 +105,11 @@ class FilesController {
     if (!userId)
       return res.status(401).json({ error: 'Unauthorized' });
 
-    let file; // Wrap in try/catch in case ID is malformed or Mongo errors out
-    try {
-      file = await dbClient.db.collection('files').findOne({  // Try to find file by:
-        _id: new ObjectId(req.params.id),                     // _id from URL param: /files/:id
-        userId: new ObjectId(userId),                         // userId (to ensure it belongs to the user)
-      });
-    } catch {
-      return res.status(404).json({ error: 'Not found' });    // If file not found, 404
-    }
-
+    const file = await getFileByIdAndUser(req.params.id, userId);
     if (!file)
-      return res.status(404).json({ error: 'Not found' });  // For if findOne returns null
+      return res.status(404).json({ error: 'Not found' });
 
-    const result = {            // Creates response object
-      id: file._id,             // id, name, etc. copied from DB
-      userId: file.userId,      // "..." field only includes localpath if it exists
-      name: file.name,
-      type: file.type,
-      isPublic: file.isPublic,
-      parentId: file.parentId,
-      ...(file.localPath && { localPath: file.localPath }),
-    };
-
-    return res.status(200).json(result);
+    return res.status(200).json(formatFileResponse(file));
   }
 
   static async getIndex(req, res) {
@@ -156,15 +137,7 @@ class FilesController {
     .toArray();
 
     // Format response
-    const fileList = files.map(file =>({
-      id: file._id,
-      userId: file.userId,
-      name: file.name,
-      type: file.type,
-      isPublic: file.isPublic,
-      parentId: file.parentId,
-      ...(file.localPath && { localPath: file.localPath }),
-    }));
+    const fileList = files.map(formatFileResponse);
 
     return res.status(200).json(fileList);
   }
@@ -176,10 +149,7 @@ class FilesController {
 
     const fileId = req.params.id;
     try {
-      const file = await dbClient.db.collection('files').findOne({
-        _id: new ObjectId(fileId),
-        userId: new ObjectId(userId),
-    });
+      const file = await getFileByIdAndUser(fileId, userId);
 
     if (!file)
       return res.status(404).json({ error: 'Not found' });
@@ -189,15 +159,8 @@ class FilesController {
       { $set: { isPublic: true } }
     );
 
-    return res.status(200).json({
-      id: file._id,
-      userId: file.userId,
-      name: file.name,
-      type: file.type,
-      isPublic: true,
-      parentId: file.parentId,
-      ...(file.localPath && { localPath: file.localPath }),
-    });
+    return res.status(200).json(formatFileResponse(file));
+
     } catch {
       return res.status(404).json({ error: 'Not found' });
     }
@@ -210,10 +173,7 @@ class FilesController {
 
     const fileId = req.params.id;
     try {
-      const file = await dbClient.db.collection('files').findOne({
-        _id: new ObjectId(fileId),
-        userId: new ObjectId(userId),
-      });
+      const file = await getFileByIdAndUser(fileId, userId);
 
       if (!file)
         return res.status(404).json({ error: 'Not found' });
@@ -223,15 +183,8 @@ class FilesController {
         { $set: { isPublic: false } }
       );
 
-      return res.status(200).json({
-        id: file._id,
-        userId: file.userId,
-        name: file.name,
-        type: file.type,
-        isPublic: false,
-        parentId: file.parentId,
-        ...(file.localPath && { localPath: file.localPath }),
-      });
+      return res.status(200).json(formatFileResponse(file));
+
     } catch {
       return res.status(404).json({ error: 'Not found' });
     }
