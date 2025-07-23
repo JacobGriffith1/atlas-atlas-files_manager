@@ -23,5 +23,7 @@ router.get('/disconnect', AuthController.getDisconnect);
 router.post('/files', FilesController.postUpload);  // Create File/Folder
 router.get('/files', FilesController.getIndex);     // List Files
 router.get('/files/:id', FilesController.getShow);  // Get File Metadata
+router.put('/files/:id/publish', FilesController.putPublish);     // [ isPublic = false ] ==PUT /publish====> [ isPublic = true  ]
+router.put('/files/:id/unpublish', FilesController.putUnpublish); // [ isPublic = true  ] ==PUT /unpublish==> [ isPublic = false ]
 
 export default router;
