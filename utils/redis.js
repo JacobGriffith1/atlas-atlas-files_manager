@@ -23,8 +23,8 @@ class RedisClient {
     return this.client.get(key);
   }
 
-  async set(key, value, duration) {
-    return this.client.setEx(key, duration, value);
+  async set(key, value, options = {}) {
+    return this.client.set(key, value, options);
   }
 
   async del(key) {
