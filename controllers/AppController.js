@@ -4,9 +4,12 @@ import dbClient from '../utils/db.js';
 
 class AppController {
     static async getStatus(req, res) {
+        const dbStatus = await dbClient.isAlive();
+        const redisStatus = redisClient.isAlive();
+
         res.status(200).json({
-            redis: redisClient.isAlive(),
-            db: dbClient.isAlive()
+            redis: redisStatus,
+            db: dbStatus
         });
     }
 

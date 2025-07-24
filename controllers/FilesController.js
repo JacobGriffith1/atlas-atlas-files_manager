@@ -3,12 +3,12 @@ import { ObjectId } from 'mongodb';
 import fs from 'fs/promises';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import dbClient from '../utils/db';
+import dbClient from '../utils/db.js';
 import dotenv from 'dotenv';
-import { getUserFromToken, getUserDocument } from '../utils/auth';
-import { getFileByIdAndUser, formatFileResponse } from '../utils/file';
+import { getUserFromToken, getUserDocument } from '../utils/auth.js';
+import { getFileByIdAndUser, formatFileResponse } from '../utils/file.js';
 import mime from 'mime-types';
-import fileQueue from '../utils/queues/fileQueue';
+import fileQueue from '../utils/queues/fileQueue.js';
 
 dotenv.config();
 

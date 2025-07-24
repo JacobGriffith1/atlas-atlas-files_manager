@@ -1,6 +1,6 @@
 // utils/file.js
 import { ObjectId } from "mongodb";
-import dbClient from "./db";
+import dbClient from "./db.js";
 
 /**
  * Retrieves a file document by ID and verifies user ownership.

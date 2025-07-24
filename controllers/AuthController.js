@@ -1,6 +1,6 @@
 // controllers/AuthController.js
 import dbClient from '../utils/db.js';
-import redisClient from '../utils/db.js';
+import redisClient from '../utils/redis.js';
 import sha1 from 'sha1';
 import { v4 as uuidv4 } from 'uuid';
 

@@ -1,7 +1,7 @@
 // utils/auth.js
 import { ObjectId } from 'mongodb';
-import redisClient from '../utils/redis';
-import dbClient from './db';
+import redisClient from '../utils/redis.js';
+import dbClient from './db.js';
 
 export async function getUserFromToken(req) {
   const token = req.headers['x-token'];

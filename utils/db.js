@@ -13,13 +13,18 @@ class DBClient {
     this.client.connect()
       .then(() => {
         console.log('Connected to MongoDB');
-        this.db = this.client.db();
+        this.db = this.client.db('files_manager');
       })
       .catch((err) => console.error('MongoDB connection error:', err));
   }
 
-  isAlive() {
-    return this.client && this.client.topology && this.client.topology.isConnected();
+  async isAlive() {
+    try {
+      await this.db.command({ ping: 1 });
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async nbUsers() {
