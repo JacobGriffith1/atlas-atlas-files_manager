@@ -1,6 +1,7 @@
 // utils/auth.js
 import { ObjectId } from 'mongodb';
 import redisClient from '../utils/redis';
+import dbClient from './db';
 
 export async function getUserFromToken(req) {
   const token = req.headers['x-token'];
@@ -12,4 +13,9 @@ export async function getUserFromToken(req) {
     return null;
   
   return new ObjectId(userId);
+}
+
+export async function getUserDocument(userId) {
+  if (!userId) return null;
+  return dbClient.db.collection('users').findOne({ _id: new ObjectId(userId) });
 }

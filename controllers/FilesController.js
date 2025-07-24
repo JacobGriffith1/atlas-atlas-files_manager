@@ -5,7 +5,7 @@ import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import dbClient from '../utils/db';
 import dotenv from 'dotenv';
-import { getUserFromToken } from '../utils/auth';
+import { getUserFromToken, getUserDocument } from '../utils/auth';
 import { getFileByIdAndUser, formatFileResponse } from '../utils/file';
 
 dotenv.config();
@@ -19,7 +19,7 @@ class FilesController {
     if (!userId)
       return res.status(401).json({ error: 'Unauthorized' });
 
-    const user = await dbClient.db.collection('users').findOne({ _id: new ObjectId(userId) });
+    const user = await getUserDocument(userId);
     if (!user)
       return res.status(401).json({ error: 'Unauthorized' });
 
@@ -92,12 +92,8 @@ class FilesController {
 
     const result = await dbClient.db.collection('files').insertOne(fileDocument);
 
-    const newFile = {
-      id: result.insertedId,
-      ...fileDocument,
-    };
-
-    return res.status(201).json(newFile);
+    const newFile = await dbClient.db.collection('files').findOne({ _id: result.insertedId });
+    return res.status(201).json(formatFileResponse(newFile));
   }
 
   static async getShow(req, res) {
