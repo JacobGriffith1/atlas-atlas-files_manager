@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 import { getUserFromToken, getUserDocument } from '../utils/auth';
 import { getFileByIdAndUser, formatFileResponse } from '../utils/file';
 import mime from 'mime-types';
+import fileQueue from '../utils/queues/fileQueue';
 
 dotenv.config();
 
@@ -93,8 +94,15 @@ class FilesController {
 
     const result = await dbClient.db.collection('files').insertOne(fileDocument);
 
-    const newFile = await dbClient.db.collection('files').findOne({ _id: result.insertedId });
-    return res.status(201).json(formatFileResponse(newFile));
+   if (type === 'image') {
+    await fileQueue.add({
+      userId: user._id.toString(),
+      fileId: result.insertedId.toString(),
+    });
+  }
+
+  const newFile = await dbClient.db.collection('files').findOne({ _id: result.insertedId });
+  return res.status(201).json(formatFileResponse(newFile));
   }
 
   static async getShow(req, res) {
@@ -189,6 +197,7 @@ class FilesController {
 
   static async getFile(req, res) {
     const fileId = req.params.id;
+    const size = req.query.size;
 
     let file;
     try {
@@ -214,8 +223,18 @@ class FilesController {
       return res.status(404).json({ error: 'Not found' });
     }
 
+    const validSizes = ['500', '250', '100'];
+    let targetPath = file.localPath;
+
+    if (size) {
+      if (!validSizes.includes(size)) {
+        return res.status(400).json({ error: 'Invalid size parameter' });
+      }
+      targetPath = `${file.localPath}_${size}`;
+    }
+
     try {
-      const fileContent = await fs.readFile(file.localPath);
+      const fileContent = await fs.readFile(targetPath);
       const mimeType = mime.lookup(file.name) || 'application/octet-stream';
       res.setHeader('Content-Type', mimeType);
       return res.status(200).send(fileContent);
